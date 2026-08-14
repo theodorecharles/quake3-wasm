@@ -1,0 +1,4 @@
+/build-web/
+/baseq3/
+*.pk3
+.DS_Store

@@ -705,7 +705,11 @@ int PC_ExpandBuiltinDefine(source_t *source, token_t *deftoken, define_t *define
 										token_t **firsttoken, token_t **lasttoken)
 {
 	token_t *token;
+#ifdef __EMSCRIPTEN__
+	time_t t;
+#else
 	unsigned long t;	//	time_t t; //to prevent LCC warning
+#endif
 	char *curtime;
 
 	token = PC_CopyToken(deftoken);
@@ -741,7 +745,9 @@ int PC_ExpandBuiltinDefine(source_t *source, token_t *deftoken, define_t *define
 			strncat(token->string, curtime+4, 7);
 			strncat(token->string+7, curtime+20, 4);
 			strcat(token->string, "\"");
+#ifndef __EMSCRIPTEN__
 			free(curtime);
+#endif
 			token->type = TT_NAME;
 			token->subtype = strlen(token->string);
 			*firsttoken = token;
@@ -755,7 +761,9 @@ int PC_ExpandBuiltinDefine(source_t *source, token_t *deftoken, define_t *define
 			strcpy(token->string, "\"");
 			strncat(token->string, curtime+11, 8);
 			strcat(token->string, "\"");
+#ifndef __EMSCRIPTEN__
 			free(curtime);
+#endif
 			token->type = TT_NAME;
 			token->subtype = strlen(token->string);
 			*firsttoken = token;
@@ -3225,4 +3233,3 @@ void PC_CheckOpenSourceHandles(void)
 		} //end if
 	} //end for
 } //end of the function PC_CheckOpenSourceHandles
-

@@ -471,6 +471,12 @@ vm_t *VM_Create( const char *module, int (*systemCalls)(int *),
 	Q_strncpyz( vm->name, module, sizeof( vm->name ) );
 	vm->systemCall = systemCalls;
 
+#ifdef __EMSCRIPTEN__
+	// WebAssembly cannot load native game DLLs or execute the native JIT output.
+	// Retail QVM bytecode is portable, so always use the built-in interpreter.
+	interpret = VMI_BYTECODE;
+#endif
+
 	// never allow dll loading with a demo
 	if ( interpret == VMI_NATIVE ) {
 		if ( Cvar_VariableValue( "fs_restrict" ) ) {
@@ -826,10 +832,19 @@ void VM_LogSyscalls( int *args ) {
 
 
 
-#ifdef oDLL_ONLY // bk010215 - for DLL_ONLY dedicated servers/builds w/o VM
+#ifdef __EMSCRIPTEN__
+int VM_CallCompiled( vm_t *vm, int *args ) {
+	return VM_CallInterpreted( vm, args );
+}
+
+void VM_Compile( vm_t *vm, vmHeader_t *header ) {
+	vm->compiled = qfalse;
+	VM_PrepareInterpreter( vm, header );
+}
+#elif defined(oDLL_ONLY) // bk010215 - for DLL_ONLY dedicated servers/builds w/o VM
 int	VM_CallCompiled( vm_t *vm, int *args ) {
   return(0); 
 }
 
 void VM_Compile( vm_t *vm, vmHeader_t *header ) {}
-#endif // DLL_ONLY
+#endif // __EMSCRIPTEN__ / DLL_ONLY

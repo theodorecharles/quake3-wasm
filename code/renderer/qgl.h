@@ -45,6 +45,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "macosx_glimp.h"
 
+#elif defined( __EMSCRIPTEN__ )
+
+#include <GL/gl.h>
+
 #elif defined( __linux__ )
 
 #include <GL/gl.h>

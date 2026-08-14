@@ -238,6 +238,27 @@ static inline float LittleFloat (const float l) { return FloatSwap(&l); }
 
 #endif
 
+//======================= WEBASSEMBLY DEFINES ===========================
+
+#ifdef __EMSCRIPTEN__
+
+#include <strings.h>
+
+#define stricmp strcasecmp
+#define MAC_STATIC
+#define ID_INLINE inline
+#define CPUSTRING "web-wasm32"
+#define PATH_SEP '/'
+
+static ID_INLINE short BigShort(short l) { return ShortSwap(l); }
+#define LittleShort
+static ID_INLINE int BigLong(int l) { return LongSwap(l); }
+#define LittleLong
+static ID_INLINE float BigFloat(const float *l) { return FloatSwap(l); }
+#define LittleFloat
+
+#endif
+
 //======================= LINUX DEFINES =================================
 
 // the mac compiler can't handle >32k of locals, so we
