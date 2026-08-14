@@ -13,6 +13,10 @@
   "author": "Anthony Pesch",
   "license": "MIT",
   "readmeFilename": "README.md",
+  "scripts": {
+    "build": "./build-web.sh",
+    "test": "bash tests/static.sh && node tests/bot-policy.test.js"
+  },
   "dependencies": {
     "async": "~0.2.9",
     "buffer-crc32": "~0.2.1",

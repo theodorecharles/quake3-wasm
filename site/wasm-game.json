@@ -1,0 +1,56 @@
+{
+  "id": "quake3",
+  "title": "Quake III Arena",
+  "kicker": "id Tech 3 · QuakeJS",
+  "description": "Enter an authentic Quake III arena backed by your legally owned game data.",
+  "icon": "/quake3.ico",
+  "iconPixelated": false,
+  "background": "/quake3-background.png",
+  "backgroundPosition": "center",
+  "backgroundSize": "contain",
+  "pwa": {
+    "name": "Quake III Arena",
+    "shortName": "Quake III",
+    "description": "Quake III Arena in the shared WASM game shell.",
+    "themeColor": "#5e0909",
+    "backgroundColor": "#000000",
+    "orientation": "landscape",
+    "icons": [
+      { "src": "/quake3.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+      { "src": "/pwa-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    ]
+  },
+  "displayMode": "dynamic",
+  "nativeManaged": true,
+  "syncBackbuffer": false,
+  "resizeTransition": "immediate",
+  "pointerWidth": 640,
+  "pointerHeight": 480,
+  "pointerFit": "contain",
+  "pointerLock": true,
+  "canvasWidth": 1280,
+  "canvasHeight": 720,
+  "maxDpr": 1,
+  "identity": true,
+  "graphics": true,
+  "fullscreen": true,
+  "defaultFullscreen": false,
+  "preferencesNamespace": "quake3-framework",
+  "defaultPlayerName": "Player",
+  "profiles": [
+    { "value": "high", "label": "High detail" },
+    { "value": "balanced", "label": "Balanced" },
+    { "value": "performance", "label": "Performance" }
+  ],
+  "defaultProfile": "balanced",
+  "fpsTargets": [30, 60, 120],
+  "defaultFps": 60,
+  "defaultDynamicQuality": true,
+  "adapter": "/game-adapter.js",
+  "provisioningText": "Install your Quake III Arena PAK files to continue.",
+  "theme": {
+    "accent": "#b41d16",
+    "accentHover": "#d4392d",
+    "focus": "#ef6d62"
+  }
+}
