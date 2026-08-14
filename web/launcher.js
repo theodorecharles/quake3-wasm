@@ -41,6 +41,18 @@ async function useDirectory(directory) {
   await prepareFiles(files, `${directory.name} (${files.length} PAKs)`);
 }
 
+async function useLoopbackData() {
+  const manifest = await manifestPromise;
+  const files = [];
+  for (const expected of manifest.files) {
+    setStatus(`Loading local ${expected.name}…`);
+    const response = await fetch(`/local-data/${encodeURIComponent(expected.name)}`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Local ${expected.name} is unavailable (HTTP ${response.status})`);
+    files.push(new File([await response.blob()], expected.name, { lastModified: 0 }));
+  }
+  await prepareFiles(files, "Local baseq3 data");
+}
+
 directoryButton.addEventListener("click", async () => {
   try {
     const directory = await Quake3Assets.chooseDirectory();
@@ -106,7 +118,11 @@ form.addEventListener("submit", async event => {
 
 playerName.value = localStorage.getItem("quake3-player-name") || "Ranger";
 profile.value = localStorage.getItem("quake3-graphics-profile") || "high";
-Quake3Assets.restoreDirectory().then(directory => {
-  if (directory) useDirectory(directory);
-}).catch(() => {});
+if (new URLSearchParams(location.search).get("localdata") === "1") {
+  useLoopbackData().catch(error => setStatus(error.message, true));
+} else {
+  Quake3Assets.restoreDirectory().then(directory => {
+    if (directory) useDirectory(directory);
+  }).catch(() => {});
+}
 manifestPromise.catch(error => setStatus(`Could not load the local PAK manifest: ${error.message}`, true));

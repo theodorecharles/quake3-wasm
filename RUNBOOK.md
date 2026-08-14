@@ -23,7 +23,14 @@ As of 2026-08-14:
 - The selected directory handle, validation metadata, launcher preferences, and the small generated manifest response are cached browser-locally. Retail bytes are not cached in browser databases.
 - Static checks and a local HTTP artifact check pass.
 
-Chromium execution has deliberately not been run in this lane. The coordinator owns serialized browser testing. Therefore title/menu rendering, QVM startup, input behavior, and launching an arena are not yet claimed as runtime-verified.
+Serialized Chrome testing now confirms that `?localdata=1` streams all nine
+PAKs from the portfolio's loopback-only, read-only mount, validates every file,
+and enables Play. Title/menu rendering, input behavior, and launching an arena
+still need the deeper manual pass.
+
+The local-data mode is intentionally a workstation convenience: it must only be
+served on `127.0.0.1`. The normal launcher continues to use the browser directory
+picker and never transmits retail bytes.
 
 Audio and remote multiplayer transport are intentionally disabled in this first milestone. Local listen-server loopback is retained in the native engine. Dynamic frame-target quality adjustment, an idle/wake dedicated server, eight-player bot-yield population management, and production container packaging are follow-on work, not implemented features.
 
