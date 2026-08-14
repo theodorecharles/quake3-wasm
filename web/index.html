@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070707">
+  <title>quake3-wasm</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main id="game-frame">
+    <canvas id="game" tabindex="0" aria-label="Quake III Arena game canvas"></canvas>
+    <section id="gate" class="panel" aria-labelledby="title">
+      <div class="brand" aria-hidden="true">Q<span>3</span></div>
+      <h1 id="title">QUAKE III ARENA</h1>
+      <p class="subtitle">WEBASSEMBLY // SHARED ARENA</p>
+      <form id="play-form">
+        <label for="player-name">PLAYER NAME</label>
+        <input id="player-name" name="player-name" maxlength="32" autocomplete="nickname" required>
+        <details>
+          <summary>ADVANCED SETTINGS</summary>
+          <label for="profile">GRAPHICS CEILING</label>
+          <select id="profile"><option>Minimum</option><option>Performance</option><option>Balanced</option><option selected>Maximum</option></select>
+          <label class="check"><input id="dynamic" type="checkbox" checked> DYNAMIC QUALITY</label>
+          <label for="target-fps">TARGET FPS</label>
+          <select id="target-fps"><option>30</option><option selected>60</option><option>120</option></select>
+        </details>
+        <button type="submit">ENTER THE ARENA</button>
+      </form>
+      <p class="legal">Requires your legally installed Quake III Arena data. Nothing is uploaded.</p>
+    </section>
+    <section id="startup" class="panel hidden" aria-live="polite">
+      <h2>INITIALIZING ARENA</h2>
+      <progress id="progress" max="1" value="0"></progress>
+      <pre id="terminal"></pre>
+      <button id="retry" class="hidden" type="button">RETRY</button>
+    </section>
+    <aside id="diagnostics" class="hidden"></aside>
+  </main>
+  <script type="module" src="/js/app.mjs"></script>
+</body>
+</html>

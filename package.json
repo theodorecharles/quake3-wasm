@@ -1,31 +1,25 @@
 {
-  "name": "quakejs",
-  "version": "0.0.1",
-  "bin": {
-    "quakejs-content": "bin/content.js",
-    "quakejs-master": "bin/master.js",
-    "quakejs-repak": "bin/repak.js"
-  },
+  "name": "quake3-wasm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Quake III Arena in the browser with a supervised shared match",
   "repository": {
     "type": "git",
-    "url": "git://github.com/inolen/quakejs.git"
+    "url": "git+https://github.com/theodorecharles/quake3-wasm.git"
   },
-  "author": "Anthony Pesch",
-  "license": "MIT",
-  "readmeFilename": "README.md",
+  "license": "GPL-2.0-or-later",
+  "scripts": {
+    "setup:data": "bash scripts/setup-game-data.sh",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "bash scripts/build-web-client.sh",
+    "build:server": "bash scripts/build-dedicated.sh",
+    "start": "node server/index.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
-    "async": "~0.2.9",
-    "buffer-crc32": "~0.2.1",
-    "ejs": "~0.8.4",
-    "execSync": "~1.0.1-pre",
-    "express": "~3.3.5",
-    "optimist": "~0.6.0",
-    "quakejs-files": "0.0.3",
-    "send": "^0.16.2",
-    "temp": "~0.5.1",
-    "underscore": "~1.5.1",
-    "winston": "2.4.0",
-    "wrench": "~1.5.4",
-    "ws": "~0.4.29"
+    "ws": "^8.18.3"
   }
 }

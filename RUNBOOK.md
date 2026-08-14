@@ -11,40 +11,66 @@ and dedicated match running through WebAssembly and WebSockets, with a small
 browser shell handling lifecycle and delivery concerns that native id Tech 3
 never had to solve.
 
+Read `/home/ted/Development/WASM_PORTS_RUNBOOK.md` before using this file. The
+portfolio runbook assigns Quake III to a `gpt-5.6-sol` worker at `xhigh`
+reasoning under the `gpt-5.6-luna` coordinator at `max` reasoning. Luna alone
+owns interactive Chrome testing and must inspect any work left by the earlier
+standalone Quake III session before assigning new changes.
+
+## Downstream-only rule
+
+Do not submit anything upstream. Do not open or comment on QuakeJS, ioquake3,
+or id Software pull requests, issues, discussions, commits, or releases. Do
+not message maintainers. Never push to an `upstream` remote. All generated
+code, patches, build changes, documentation, and release work stays only in
+`theodorecharles/quake3-wasm`, even if a change appears generally useful.
+
 ## Current checkpoint
 
 - GitHub fork: `theodorecharles/quake3-wasm`.
 - Work branch: `devel`.
-- The ioq3 submodule is initialized at upstream QuakeJS's pinned revision.
+- The ioq3 submodule now tracks official ioquake3 commit
+  `588393618dbc82e7207c21c6ddecca229944a03a`. The original QuakeJS-pinned
+  2014 revision was retired after its JavaScript system and QVM compiler
+  libraries proved incompatible with modern Emscripten internals.
 - The official id Software source is cloned locally at
   `references/quake3-source/` and ignored by Git.
 - Steam `pak0.pk3` through `pak8.pk3` were located and checksummed; none are in
   Git.
 - Emscripten 6.0.6 is installed under `/home/ted/emsdk`.
-- The first build failure was the old source expecting `EMSCRIPTEN` while the
-  modern compiler defines `__EMSCRIPTEN__`. The compatibility fix is recorded
-  in `patches/ioq3-wasm.patch`.
-- After applying that patch, the next build blocker is the Makefile dependency
-  on `.git/index`. Because `ioq3` is a submodule, `.git` is a file and its real
-  index is returned by `git rev-parse --git-path index`. Update the Makefile's
-  three version-rebuild dependencies to use that resolved path, append the
-  resulting diff to `patches/ioq3-wasm.patch`, and rebuild immediately.
+- Clean reproducible scripts build the official ioquake3 client with
+  Emscripten 6.0.6, SDL2, WebGL 2, and CMake/Ninja, plus a native dedicated
+  server and baseq3/missionpack QVMs.
+- The same-origin Node host has loaded a real retail baseq3 map, served PK3 byte
+  ranges, completed a binary WebSocket-to-UDP status round trip, and converged
+  to eight bots while leaving the ninth transient join slot free.
+- The first live supervisor defect was corrected: modern ioquake3's RCON
+  `status` columns are now parsed accurately, so bots are not mistaken for an
+  empty server and actual humans can drive idle lifecycle accounting.
+- Luna's serial Chrome pass is the next gate: prove WebAssembly engine
+  initialization, PK3 filesystem mounting, authentic menu rendering, input,
+  and audio before claiming milestones 4 through 6.
 
 Reproduce the current build loop with:
 
 ```bash
 git submodule update --init
-git -C ioq3 apply ../patches/ioq3-wasm.patch
 source /home/ted/emsdk/emsdk_env.sh
-make -C ioq3 -j2 PLATFORM=js EMSCRIPTEN=/home/ted/emsdk/upstream/emscripten
+emcmake cmake -S ioq3 -B build/client -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release -DBUILD_CLIENT=ON -DBUILD_SERVER=OFF \
+  -DBUILD_GAME_LIBRARIES=OFF -DBUILD_GAME_QVMS=OFF \
+  -DBUILD_RENDERER_GL1=OFF -DBUILD_RENDERER_GL2=ON \
+  -DUSE_RENDERER_DLOPEN=OFF -DUSE_OPENAL=OFF -DUSE_VOIP=OFF
+cmake --build build/client --parallel 2
 ```
 
 ## Source layout and authority
 
 - This repository is the product repository and is published as
   `theodorecharles/quake3-wasm`.
-- `ioq3/` is the QuakeJS-pinned ioquake3 submodule. It already contains the old
-  Emscripten platform and is the implementation base to modernize.
+- `ioq3/` is the official current ioquake3 submodule. Its maintained
+  Emscripten/SDL2/WebGL path is the implementation base; product-specific
+  browser hooks remain reviewable changes in this repository.
 - `references/quake3-source/` is a local, ignored clone of
   `id-Software/Quake-III-Arena`. Use it to answer questions about original
   Quake III menu, HUD, input, renderer, game, and bot behavior. Never edit it as
@@ -510,10 +536,10 @@ diagnostics. Keep RCON secrets server-side.
 The upstream QuakeJS branch is preserved as remote `upstream`; this fork is
 remote `origin`. Keep changes reviewable and do not rewrite upstream history.
 
-Engine/submodule changes must be reproducible. Prefer a maintained
-`patches/ioq3-wasm.patch` plus setup script, or move the submodule pointer to a
-clearly identified fork if patching becomes unmanageable. Never leave the only
-copy of a fix as dirty, uncommitted submodule state.
+Engine/submodule changes must be reproducible. Keep product-specific changes in
+a maintained patch plus setup script, or move the submodule pointer to a clearly
+identified fork if patching becomes unmanageable. Never leave the only copy of
+a fix as dirty, uncommitted submodule state.
 
 ## Tests and acceptance gates
 

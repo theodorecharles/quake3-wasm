@@ -2,7 +2,11 @@
 assets/
 assets_src/
 base/
+build/
 data/
 local-assets/
 node_modules/
 references/quake3-source/
+runtime/
+web/client/
+artifacts/runtime/

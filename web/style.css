@@ -1,0 +1,31 @@
+:root { color-scheme: dark; font-family: "Lucida Console", "Courier New", monospace; background: #050505; }
+* { box-sizing: border-box; }
+html, body, #game-frame { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+#game-frame { position: relative; display: grid; place-items: center; background: radial-gradient(circle at 50% 35%, #2c211a, #090909 48%, #000); }
+#game { position: absolute; inset: 0; width: 100%; height: 100%; outline: 0; background: #000; }
+.panel { position: relative; z-index: 2; width: min(92vw, 520px); padding: 34px 38px; color: #d7d7d7; background: rgba(8, 10, 12, .96); border: 1px solid #6f5a43; box-shadow: 0 0 0 3px #15110d, 0 24px 90px #000; }
+.brand { margin: -84px auto 5px; width: 96px; height: 96px; display: grid; place-items: center; font: 900 58px/1 Arial Black, sans-serif; color: #c8c4bc; background: #111; border: 5px solid #675744; transform: rotate(45deg); box-shadow: 0 0 30px #000; }
+.brand > span { color: #a43824; }
+.brand, .brand > * { text-shadow: 3px 3px #000; }
+.brand { letter-spacing: -15px; }
+h1, h2 { margin: 16px 0 2px; text-align: center; letter-spacing: .13em; color: #e2d8c5; }
+.subtitle { margin: 0 0 26px; text-align: center; color: #8e4c36; letter-spacing: .18em; font-size: 12px; }
+label { display: block; margin: 15px 0 7px; color: #a9a49a; font-size: 12px; letter-spacing: .09em; }
+input, select, button { width: 100%; min-height: 42px; border: 1px solid #62584a; border-radius: 0; color: #eee; background: #161616; font: inherit; }
+input, select { padding: 8px 10px; }
+button { margin-top: 22px; cursor: pointer; color: #f0dfc9; background: #6f281d; border-color: #aa4b33; font-weight: 700; letter-spacing: .1em; }
+button:hover, button:focus-visible { background: #903421; outline: 2px solid #d99364; outline-offset: 2px; }
+details { margin-top: 18px; border-top: 1px solid #332e29; padding-top: 12px; }
+summary { cursor: pointer; color: #777; font-size: 12px; }
+.check { display: flex; align-items: center; gap: 8px; }
+.check input { width: 18px; min-height: 18px; }
+.legal { margin: 20px 0 0; color: #676767; font-size: 10px; line-height: 1.5; }
+.hidden { display: none !important; }
+#startup { background: #526173; color: #d8dce1; border-color: #8391a1; }
+#startup h2 { color: #e3e7eb; }
+progress { width: 100%; height: 9px; appearance: none; }
+progress::-webkit-progress-bar { background: #313a46; }
+progress::-webkit-progress-value { background: #d3d8dd; }
+#terminal { height: 245px; margin: 18px 0 0; overflow: hidden; white-space: pre-wrap; color: #e0e3e6; font: 14px/1.4 "Lucida Console", monospace; }
+#diagnostics { position: absolute; z-index: 3; top: 8px; right: 8px; padding: 5px 8px; color: #bbb; background: #000a; font-size: 11px; pointer-events: none; }
+@media (max-height: 680px) { .panel { padding: 20px 28px; } .brand { display: none; } #terminal { height: 180px; } }

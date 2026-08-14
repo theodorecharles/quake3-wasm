@@ -1,18 +1,73 @@
-diff --git a/code/qcommon/q_platform.h b/code/qcommon/q_platform.h
-index 9064b777..ff8b25a1 100644
---- a/code/qcommon/q_platform.h
-+++ b/code/qcommon/q_platform.h
-@@ -23,6 +23,13 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
- #ifndef __Q_PLATFORM_H
- #define __Q_PLATFORM_H
+diff --git a/cmake/client.cmake b/cmake/client.cmake
+index 41dc9360..5cceb423 100644
+--- a/cmake/client.cmake
++++ b/cmake/client.cmake
+@@ -36,6 +36,7 @@ set(CLIENT_SOURCES
+     ${SOURCE_DIR}/client/snd_openal.c
+     ${SOURCE_DIR}/sdl/sdl_input.c
+     ${SOURCE_DIR}/sdl/sdl_snd.c
++    ${SOURCE_DIR}/web/q3js_browser.c
+     ${CLIENT_PLATFORM_SOURCES}
+ )
  
-+/* Modern Emscripten exposes the compiler-standard __EMSCRIPTEN__ macro.
-+ * QuakeJS predates that spelling and uses EMSCRIPTEN throughout its platform
-+ * layer, so retain the existing guards through one compatibility alias. */
-+#if defined(__EMSCRIPTEN__) && !defined(EMSCRIPTEN)
-+#define EMSCRIPTEN 1
+diff --git a/cmake/platforms/emscripten.cmake b/cmake/platforms/emscripten.cmake
+index 6948845c..04ed5725 100644
+--- a/cmake/platforms/emscripten.cmake
++++ b/cmake/platforms/emscripten.cmake
+@@ -23,7 +23,7 @@ list(APPEND CLIENT_LINK_OPTIONS
+     -sSTACK_SIZE=5MB
+     -sMIN_WEBGL_VERSION=1
+     -sMAX_WEBGL_VERSION=2
+-    -sEXPORTED_RUNTIME_METHODS=FS,addRunDependency,removeRunDependency
++    -sEXPORTED_RUNTIME_METHODS=FS,addRunDependency,removeRunDependency,callMain
+     -sEXIT_RUNTIME=1
+     -sEXPORT_ES6
+     -sEXPORT_NAME=${CLIENT_NAME}
+diff --git a/code/web/q3js_browser.c b/code/web/q3js_browser.c
+new file mode 100644
+index 00000000..50f959b9
+--- /dev/null
++++ b/code/web/q3js_browser.c
+@@ -0,0 +1,42 @@
++#include "../client/client.h"
++
++#ifdef __EMSCRIPTEN__
++#include <emscripten/emscripten.h>
++#else
++#define EMSCRIPTEN_KEEPALIVE
 +#endif
 +
- // this is for determining if we have an asm version of a C function
- #define idx64 0
- 
++EMSCRIPTEN_KEEPALIVE int Q3JS_IsConnected( void )
++{
++    return clc.state == CA_ACTIVE ? 1 : 0;
++}
++
++EMSCRIPTEN_KEEPALIVE void Q3JS_SetQuality( int profile )
++{
++    static const char *picmip[] = { "3", "2", "1", "0" };
++    static const char *subdivisions[] = { "20", "12", "8", "4" };
++    static const char *lodBias[] = { "2", "1", "0", "-2" };
++    static const char *shadows[] = { "0", "0", "1", "2" };
++
++    if( profile < 0 ) profile = 0;
++    if( profile > 3 ) profile = 3;
++    Cvar_Set( "r_picmip", picmip[profile] );
++    Cvar_Set( "r_subdivisions", subdivisions[profile] );
++    Cvar_Set( "r_lodbias", lodBias[profile] );
++    Cvar_Set( "cg_shadows", shadows[profile] );
++    Cvar_Set( "r_detailtextures", profile >= 2 ? "1" : "0" );
++    Cvar_Set( "r_dynamiclight", profile >= 2 ? "1" : "0" );
++    Cvar_Set( "r_fastsky", profile == 0 ? "1" : "0" );
++}
++
++EMSCRIPTEN_KEEPALIVE void Q3JS_Resize( int width, int height )
++{
++    if( width < 1 || height < 1 ) return;
++    if( Cvar_VariableIntegerValue( "r_customwidth" ) == width &&
++        Cvar_VariableIntegerValue( "r_customheight" ) == height &&
++        cls.glconfig.vidWidth == width && cls.glconfig.vidHeight == height ) return;
++    Cvar_SetValue( "r_customwidth", width );
++    Cvar_SetValue( "r_customheight", height );
++    Cvar_Set( "r_mode", "-1" );
++    Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
++}

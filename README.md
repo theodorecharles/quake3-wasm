@@ -1,134 +1,90 @@
-# QuakeJS
+# quake3-wasm
 
-QuakeJS is a port of [ioquake3](http://www.ioquake3.org) to JavaScript with the help of [Emscripten](http://github.com/kripken/emscripten).
+`quake3-wasm` is the downstream browser port of Quake III Arena based on
+modern ioquake3. It builds a WebGL 2/WebAssembly client, a native dedicated
+server and game QVMs, and serves them from one Node host with same-origin PK3
+range delivery and WebSocket-to-UDP game transport.
 
-To see a live demo, check out [http://www.quakejs.com](http://www.quakejs.com).
+The engine, menus, HUD, game code, and bots remain Quake III. The HTML layer is
+only a launcher for player/settings capture, legal asset delivery, server
+lifecycle, and browser input policy.
 
+## Legal game data
 
-## Building binaries
+Bring your own legally acquired Quake III Arena installation. Retail
+`pak0.pk3` through `pak8.pk3` are ignored by Git, are never included in public
+build artifacts, and must not be added to an image or release.
 
-As a prerequisite, you'll need to have a working build of [Emscripten](http://github.com/kripken/emscripten), then:
+For local development, discover the Steam installation automatically or set
+`Q3_PATH` to the directory containing the nine PK3 files:
 
-```shell
-cd quakejs/ioq3
-make PLATFORM=js EMSCRIPTEN=<path_to_emscripten>
+```bash
+npm run setup:data
+Q3_PATH=/path/to/baseq3 npm run setup:data
 ```
 
-Binaries will be placed in `ioq3/build/release-js-js/`.
+The default setup creates ignored symlinks under `data/baseq3`. Pass `--copy`
+directly to `scripts/setup-game-data.sh` when an ignored local copy is needed.
+The helper never downloads or uploads game data.
 
-To note, if you're trying to run a dedicated server, the most up to date binaries are already included in the `build` directory of this repository.
+## Build
 
+Requirements are Node.js 20 or newer, CMake, Ninja, a native C toolchain, and a
+current Emscripten SDK. The client script uses `/home/ted/emsdk` by default;
+set `Q3JS_EMSDK` for another checkout.
 
-## Running locally
-
-Install the required node.js modules:
-
-```shell
-npm install
-```
-
-Set `content.quakejs.com` as the content server:
-
-```shell
-echo '{ "content": "content.quakejs.com" }' > bin/web.json
-```
-
-Run the server:
-
-```shell
-node bin/web.js --config ./web.json
-```
-
-Your server is now running on: [http://0.0.0.0:8080](http://0.0.0.0:8080)
-
-
-## Running a dedicated server
-
-If you'd like to run a dedicated server, the only snag is that unlike regular Quake 3, you'll need to double check the content server to make sure it supports the mod / maps you want your server to run (which you can deduce from the [public manifest](http://content.quakejs.com/assets/manifest.json)).
-
-Also, networking in QuakeJS is done through WebSockets, which unfortunately means that native builds and web builds currently can't interact with eachother.
-
-Otherwise, running a dedicated server is similar to running a dedicated native server command-line wise.
-
-Setup a config for the mod you'd like to run, and startup the server with `+set dedicated 2`:
-
-```shell
-node build/ioq3ded.js +set fs_game <game> +set dedicated 2 +exec <server_config>
-```
-
-If you'd just like to run a dedicated server that isn't broadcast to the master server:
-
-```shell
-node build/ioq3ded.js +set fs_game <game> +set dedicated 1 +exec <server_config>
-```
-
-### baseq3 server, step-by-step
-
-*Note: for the initial download of game files you will need a server wth around 1GB of RAM. If the server exits with the message `Killed` then you need more memory*
-
-On your server clone this repository. `cd` into the `quakejs` clone and run the following commands:
-
-```
+```bash
 git submodule update --init
-npm install
-node build/ioq3ded.js +set fs_game baseq3 +set dedicated 2
+npm ci
+npm run build:client
+npm run build:server
+npm test
 ```
 
-After running the last command continue pressing Enter until you have read the EULA, and then answer the `Agree? (y/n)` prompt. The base game files will download. When they have finished press Ctrl+C to quit the server.
+Generated client files live in ignored `web/client/`. The dedicated binary and
+QVMs live in ignored `build/dedicated/`. Product-specific ioquake3 changes are
+kept in `patches/ioq3-wasm.patch`; the client build applies and then restores
+that patch when the submodule checkout is clean, and preserves a patch that was
+already present before the build.
 
-In the newly created `base/baseq3` directory add a file called `server.cfg` with the following contents (adapted from [Quake 3 World](http://www.quake3world.com/q3guide/servers.html)):
+## Run locally
 
-```
-seta sv_hostname "CHANGE ME"
-seta sv_maxclients 12
-seta g_motd "CHANGE ME"
-seta g_quadfactor 3
-seta g_gametype 0
-seta timelimit 15
-seta fraglimit 25
-seta g_weaponrespawn 3
-seta g_inactivity 3000
-seta g_forcerespawn 0
-seta rconpassword "CHANGE_ME"
-set d1 "map q3dm7 ; set nextmap vstr d2"
-set d2 "map q3dm17 ; set nextmap vstr d1"
-vstr d1
+```bash
+Q3JS_HTTP_PORT=8083 npm start
 ```
 
-replacing the `sv_hostname`, `g_motd` and `rconpassword`, and any other configuration options you desire.
+Open `http://127.0.0.1:8083/`. The host remains available while the native
+match sleeps. Submitting Play wakes a random map, validates or restores the
+PK3 cache, loads the WASM engine, and connects through the same-origin `/ws`
+endpoint.
 
-You can now run the server with 
+Useful endpoints are `/health`, `/status`, and `/config.json`. PK3 responses
+support HTTP byte ranges. Runtime logs, generated configs, RCON credentials,
+and copied QVMs stay under ignored `runtime/`.
 
-```
-node build/ioq3ded.js +set fs_game baseq3 +set dedicated 2 +exec server.cfg
-```
+Important environment variables:
 
-and you should be able to join at http://www.quakejs.com/play?connect%20SERVER_IP:27960, replacing `SERVER_IP` with the IP of your server.
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `Q3JS_HTTP_PORT` | `8080` | HTTP and WebSocket listener |
+| `Q3JS_DED_PORT` | `27960` | Internal native game port |
+| `Q3JS_SLOTS` | `8` | Maintained human-plus-bot population |
+| `Q3JS_BOT_SKILL` | `3` | ioquake3 bot skill from 1 to 5 |
+| `Q3JS_MAPS` | built-in q3dm rotation | Comma-separated cold-start maps |
+| `KEEP_ALIVE` | `false` | Keep the dedicated match continuously awake |
+| `IDLE_TIMEOUT` | `15m` | Empty-human sleep delay |
+| `Q3JS_RCON` | generated | Optional server-side RCON password |
 
-## Running a content server
+## Project status
 
-QuakeJS loads assets directly from a central content server. A public content server is available at `content.quakejs.com`, however, if you'd like you run your own (to perhaps provide new mods) you'll need to first repackage assets into the format QuakeJS expects.
+Reproducible clean builds produce a substantial Emscripten client and native
+dedicated match. Automated local checks prove PK3 validation/range serving,
+random wake, baseq3 map/QVM loading, eight-bot convergence with a reserved
+join slot, and a binary WebSocket-to-UDP status round trip. Interactive engine
+initialization, authentic-menu rendering, input, and audio still require the
+coordinator's Chrome acceptance pass described in `RUNBOOK.md`.
 
-### Repackaging assets
-
-When repackaging assets, an asset graph is built from an incoming directory of pk3s, and an optimized set of map-specific pk3s is output to a destination directory.
-
-To run this process:
-
-```shell
-node bin/repak.js --src <assets_src> --dest <assets>
-```
-
-And to launch the content server after the repackaging is complete:
-
-```shell
-node bin/content.js
-```
-
-Note: `./assets` is assumed to be the default asset directory. If you'd like to change that, you'll need to modify the JSON configuration used by the content server.
-
-Once the content server is available, you can use it by launching your local or dedicated server with `+set fs_cdn <server_address>`.
-
-## License
-
-MIT
+All work stays in `theodorecharles/quake3-wasm`; nothing is submitted upstream.
+Licensing remains component-specific. ioquake3 and the engine patch are under
+the terms in `ioq3/COPYING.txt`; retained QuakeJS files keep their existing
+copyright and license terms. Retail game data is not part of this repository.
