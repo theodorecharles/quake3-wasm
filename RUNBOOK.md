@@ -51,6 +51,11 @@ code, patches, build changes, documentation, and release work stays only in
   initialization, PK3 filesystem mounting, authentic menu rendering, input,
   and audio before claiming milestones 4 through 6.
 
+### Docker checkpoint (2026-08-14)
+
+- `scripts/build-docker.sh` builds `theodorecharles/quake3-wasm:dev` for `linux/amd64` from the real client, dedicated server, and QVM artifacts.
+- The image exposes the Node host on port 8088 and requires owner-mounted `/data/baseq3`; the local container smoke started `/wake` successfully with the Steam data mounted externally. No PK3 files are in the image.
+
 Reproduce the current build loop with:
 
 ```bash
