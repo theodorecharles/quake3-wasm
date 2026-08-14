@@ -688,6 +688,10 @@ RB_SetGL2D
 void	RB_SetGL2D (void) {
 	backEnd.projection2D = qtrue;
 
+#ifdef __EMSCRIPTEN__
+	R_WebGL_Set2D();
+#endif
+
 	// set 2D virtual screen size
 	qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
@@ -939,7 +943,21 @@ const void	*RB_DrawBuffer( const void *data ) {
 
 	cmd = (const drawBufferCommand_t *)data;
 
+#ifdef __EMSCRIPTEN__
+	/* WebGL's default framebuffer has no selectable desktop front/back draw
+	 * buffers. Emscripten's legacy-GL shim aborts on glDrawBuffer(), while the
+	 * browser already presents the same back-buffer semantics required here. */
+	(void)cmd;
+	/* The browser framebuffer is not guaranteed to preserve pixels between
+	 * frames. Explicitly establish the black frame used behind menus and
+	 * cinematics so animated UI elements cannot leave trails. */
+	qglViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+	qglScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
+	qglClearColor( 0, 0, 0, 1 );
+	qglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+#else
 	qglDrawBuffer( cmd->buffer );
+#endif
 
 	// clear screen for debugging
 	if ( r_clear->integer ) {
@@ -1140,4 +1158,3 @@ void RB_RenderThread( void ) {
 		renderThreadActive = qfalse;
 	}
 }
-

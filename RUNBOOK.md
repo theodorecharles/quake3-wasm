@@ -13,7 +13,7 @@ As of 2026-08-14:
 - A clean Emscripten build compiles all substantial client, renderer, common, server, botlib, JPEG, spline, and interpreted-QVM engine code into `quake3.js` and `quake3.wasm`.
 - The native infinite loop is replaced by `emscripten_set_main_loop`.
 - SDL2 supplies a canvas, keyboard events, text input, and pointer-lock-compatible relative mouse input.
-- WebGL 2 is selected. Emscripten's fixed-function compatibility layer carries the original renderer for this first milestone; unsupported `glArrayElement` and display-list paths are isolated in small WebAssembly branches.
+- A purpose-built GLES2/WebGL 1 submission seam consumes the original renderer's computed stages, UVs, colors, and transforms; unsupported desktop-only paths remain isolated in WebAssembly branches.
 - Retail `vm/ui.qvm`, `vm/cgame.qvm`, and `vm/qagame.qvm` are loaded from the owner's PAKs through the original QVM interpreter. Native DLL loading and native JIT execution are disabled on WebAssembly.
 - The launcher captures and persists the player's name before it downloads or instantiates the engine.
 - Low, medium, high, and ultra launch-time graphics profiles are available.
@@ -23,10 +23,11 @@ As of 2026-08-14:
 - The selected directory handle, validation metadata, launcher preferences, and the small generated manifest response are cached browser-locally. Retail bytes are not cached in browser databases.
 - Static checks and a local HTTP artifact check pass.
 
-Serialized Chrome testing now confirms that `?localdata=1` streams all nine
-PAKs from the portfolio's loopback-only, read-only mount, validates every file,
-and enables Play. Title/menu rendering, input behavior, and launching an arena
-still need the deeper manual pass.
+Serialized Chrome testing confirms that `?localdata=1` streams all nine PAKs
+from the portfolio's loopback-only, read-only mount, validates every file,
+starts the real engine, and renders the authentic main menu. A diagnostic
+`q3dm1` launch also reaches game/cgame QVM execution and the in-game HUD; its
+3D world rendering remains materially incomplete as documented below.
 
 The local-data mode is intentionally a workstation convenience: it must only be
 served on `127.0.0.1`. The normal launcher continues to use the browser directory
@@ -140,7 +141,7 @@ official native GPL engine
         + new code/web platform layer
         + Emscripten cooperative main loop
         + SDL2 input/window
-        + WebGL 2 compatibility renderer
+        + purpose-built GLES2/WebGL submission seam
         v
 browser canvas
 ```
@@ -167,17 +168,41 @@ These are requirements, not current claims:
 
 Launch profiles are working launcher policy; dynamic adjustment is not. A dynamic-quality implementation should be opt-in with 30, 60, and 120 FPS targets. It should use hysteresis and cooldowns, change one inexpensive setting at a time, avoid `vid_restart` during active combat, and persist the user's opt-in/profile separately from engine config. Test renderer correctness before attempting performance tuning.
 
-The current fixed-function compatibility path is a bootstrap, not a final renderer architecture. Runtime smoke results should determine whether the smallest next step is state-call shimming or a deliberate GLES/WebGL renderer conversion. Do not import another project's renderer as a shortcut.
+The new GLES2 submission path is deliberately small and downstream-owned, not
+an imported WebAssembly renderer. Its next pass must implement the original
+multitexture/lightmap semantics and remaining fixed-function state before
+performance tuning. Do not import another project's renderer as a shortcut.
+
+## Verified Chromium checkpoint (2026-08-14)
+
+- The loopback-only Docker lab mounted the owner's staged Steam data read-only;
+  `?localdata=1` validated and prepared all nine PAKs without a file picker.
+- The official id Tech 3 engine initialized, loaded every retail shader script,
+  interpreted `ui.qvm`, parsed 35 arenas and 32 bots, and rendered the authentic
+  Quake III Arena main menu.
+- Canvas focus delivered basic menu input. The standard `id="canvas"` target is
+  retained so SDL/Emscripten attaches its keyboard and mouse listeners to the
+  actual game surface.
+- `?localdata=1&map=q3dm1` loaded the local server plus retail game and cgame
+  QVMs and rendered the in-game HUD. This is a diagnostic-only smoke shortcut;
+  the normal portal URL still opens the authentic menu.
+- The first 3D frame is not yet visually correct: much of q3dm1 is dark and
+  some world surfaces are streaked. Menu/2D rendering is usable, while the 3D
+  stage/lightmap path remains the next renderer blocker. This checkpoint does
+  not claim playable combat yet.
+
+The menu black-screen fix is downstream code, not imported WebAssembly work:
+WebGL texture objects are now generated explicitly, legacy desktop internal
+formats are normalized to RGBA, and a small GLES2 vertex/fragment submission
+path consumes the original renderer's stage colors, UVs, and transforms.
 
 ## Known risks and honest blockers
 
-- Chrome loaded the identity/graphics/data launcher, fetched the pinned metadata
-  manifest, and correctly kept **Play** disabled before owner data was selected.
-  The automation extension could not attach local files, so engine initialization
-  and playability remain a short manual owner-data smoke rather than a claim.
 - Staging the retail PAK set into main-thread MEMFS holds one roughly 500 MB browser copy. Chunking prevents transient whole-file copies, but true zero-copy local File access requires moving the engine to a worker with synchronous Blob reads or another purpose-built synchronous storage bridge.
 - The directory handle is browser-private and is reused only while read permission remains granted. Chromium may ask the user to select/grant the folder again after a hard refresh. The fallback `<input type=file>` selection is intentionally session-only; persisting roughly 500 MB of duplicate Blob bodies in IndexedDB would conflict with the bounded-storage design.
-- Original desktop OpenGL behavior is running through legacy emulation. Link-time unsupported immediate/display-list calls were bypassed only where the native renderer already has an indexed draw path or where the display-list path is documented as unimplemented.
+- The new WebGL submit path proves menus and reaches an arena, but multitexture,
+  lightmap, and remaining desktop fixed-function state need a deliberate pass
+  before 3D playability can be claimed.
 - Audio is disabled.
 - Remote networking, dedicated-server proxying, server wake/sleep, connected-human accounting, and bot yield are not implemented.
 - There is no Docker image or deployment configuration in this milestone.
@@ -190,7 +215,9 @@ The current fixed-function compatibility path is a bootstrap, not a final render
 - `code/qcommon/common.c`: WebAssembly socket-header selection.
 - `code/qcommon/vm.c`: interpreted retail QVM enforcement.
 - `code/botlib/l_precomp.c`: WebAssembly-compatible `time_t` handling.
-- `code/renderer/qgl.h`, `tr_shade.c`, `tr_surface.c`: WebGL include and narrowly isolated unsupported desktop GL paths.
+- `code/renderer/tr_webgl.c`, `tr_image.c`, `tr_backend.c`, `tr_shade.c`:
+  purpose-built WebGL submission, valid texture allocation/formats, explicit
+  browser-frame clearing, and narrowly isolated desktop GL paths.
 - `web/`: identity-first launcher, graphics profiles, pinned PAK manifest, asset validation, persistence, and pre-run filesystem setup.
 - `scripts/`: manifest generation and loopback dev server.
 - `tests/static.sh`: JavaScript syntax, SHA implementation, artifact, manifest, and no-PK3 checks.

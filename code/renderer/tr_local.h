@@ -1247,6 +1247,11 @@ void		GLimp_SetGamma( unsigned char red[256],
 						    unsigned char green[256],
 							unsigned char blue[256] );
 
+#ifdef __EMSCRIPTEN__
+void R_WebGL_Set2D( void );
+void R_WebGL_DrawTess( int numIndexes, const glIndex_t *indexes );
+#endif
+
 
 /*
 ====================================================================

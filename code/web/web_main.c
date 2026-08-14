@@ -8,6 +8,11 @@
 unsigned sys_frame_time;
 
 static void Web_Frame(void) {
+	static unsigned frames;
+	if (frames < 3) {
+		fprintf(stdout, "[quake3-wasm] browser frame %u\n", frames + 1);
+	}
+	frames++;
 	Com_Frame();
 }
 
@@ -32,6 +37,10 @@ int main(int argc, char **argv) {
 	Sys_SetDefaultHomePath("/persist");
 	Sys_SetDefaultCDPath("");
 	Com_Init(commandLine);
+	/* The browser launcher has already validated the owner's complete retail
+	 * PAK set. Keep the retired physical-CD key gate from covering the menu;
+	 * remote master/authorize networking is disabled in this milestone. */
+	Q_strncpyz(cl_cdkey, "2222222222222222", sizeof(cl_cdkey));
 	NET_Init();
 	emscripten_set_main_loop(Web_Frame, 0, 1);
 	return 0;

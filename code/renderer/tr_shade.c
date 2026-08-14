@@ -161,22 +161,18 @@ without compiled vertex arrays.
 ==================
 */
 static void R_DrawElements( int numIndexes, const glIndex_t *indexes ) {
-	int		primitives;
-
-	primitives = r_primitives->integer;
+#ifdef __EMSCRIPTEN__
+	R_WebGL_DrawTess( numIndexes, indexes );
+#else
+	int primitives = r_primitives->integer;
 
 	// default is to use triangles if compiled vertex arrays are present
 	if ( primitives == 0 ) {
-#ifdef __EMSCRIPTEN__
-		// WebGL has indexed draws but no glArrayElement entry point.
-		primitives = 2;
-#else
 		if ( qglLockArraysEXT ) {
 			primitives = 2;
 		} else {
 			primitives = 1;
 		}
-#endif
 	}
 
 
@@ -189,11 +185,7 @@ static void R_DrawElements( int numIndexes, const glIndex_t *indexes ) {
 	}
 
 	if ( primitives == 1 ) {
-#ifndef __EMSCRIPTEN__
 		R_DrawStripElements( numIndexes,  indexes, qglArrayElement );
-#else
-		qglDrawElements( GL_TRIANGLES, numIndexes, GL_INDEX_TYPE, indexes );
-#endif
 		return;
 	}
 	
@@ -203,6 +195,7 @@ static void R_DrawElements( int numIndexes, const glIndex_t *indexes ) {
 	}
 
 	// anything else will cause no drawing
+#endif
 }
 
 

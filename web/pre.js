@@ -29,7 +29,10 @@ Module.preRun.push(function quake3MountFilesystems() {
       const path = `/data/baseq3/${file.name.toLowerCase()}`;
       const stream = Module.FS.open(path, "w");
       try {
-        Module.FS.allocate(stream, 0, file.size);
+        // Emscripten 6 removed FS.allocate from the public filesystem object.
+        // Truncating the newly created MEMFS node establishes its final size
+        // once, so chunk writes still avoid repeated file-buffer growth.
+        Module.FS.truncate(path, file.size);
         for (let offset = 0; offset < file.size; offset += chunkBytes) {
           const bytes = new Uint8Array(await file.slice(offset, offset + chunkBytes).arrayBuffer());
           Module.FS.write(stream, bytes, 0, bytes.length, offset);

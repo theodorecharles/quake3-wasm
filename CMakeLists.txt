@@ -20,6 +20,8 @@ set(RENDERER_SOURCES
   code/renderer/tr_shader.c code/renderer/tr_shadows.c code/renderer/tr_sky.c
   code/renderer/tr_surface.c code/renderer/tr_world.c)
 
+list(APPEND RENDERER_SOURCES code/renderer/tr_webgl.c)
+
 set(CLIENT_SOURCES
   code/client/cl_cgame.c code/client/cl_cin.c code/client/cl_console.c
   code/client/cl_input.c code/client/cl_keys.c code/client/cl_main.c
@@ -98,18 +100,23 @@ target_compile_options(quake3-web PRIVATE
 
 set_target_properties(quake3-web PROPERTIES
   OUTPUT_NAME "quake3"
-  SUFFIX ".js")
+  SUFFIX ".js"
+  LINK_DEPENDS "${CMAKE_SOURCE_DIR}/web/pre.js")
 
 target_link_options(quake3-web PRIVATE
   "SHELL:-s USE_SDL=2"
   "SHELL:-s USE_ZLIB=1"
   "SHELL:-s USE_WEBGL2=1"
-  "SHELL:-s MIN_WEBGL_VERSION=2"
+  "SHELL:-s MIN_WEBGL_VERSION=1"
   "SHELL:-s MAX_WEBGL_VERSION=2"
   "SHELL:-s LEGACY_GL_EMULATION=1"
   "SHELL:-s ALLOW_MEMORY_GROWTH=1"
   "SHELL:-s INITIAL_MEMORY=268435456"
   "SHELL:-s MAXIMUM_MEMORY=1073741824"
+  # The native shader parser and renderer initialization use large automatic
+  # buffers. Emscripten's default stack overflows while loading retail shader
+  # scripts even though the heap has ample room.
+  "SHELL:-s STACK_SIZE=16777216"
   "SHELL:-s MODULARIZE=1"
   "SHELL:-s EXPORT_NAME=createQuake3Module"
   "SHELL:-s EXIT_RUNTIME=0"

@@ -633,6 +633,12 @@ static void Upload32( unsigned *data,
 	} else {
 		internalFormat = 3;
 	}
+#ifdef __EMSCRIPTEN__
+	/* WebGL requires the unsized internal format to match the RGBA source
+	 * format. Desktop GL's legacy component-count values (3/4), RGB5 and
+	 * RGB8 otherwise leave the texture incomplete and sample solid black. */
+	internalFormat = GL_RGBA;
+#endif
 	// copy or resample data as appropriate for first MIP level
 	if ( ( scaled_width == width ) && 
 		( scaled_height == height ) ) {
@@ -742,7 +748,13 @@ image_t *R_CreateImage( const char *name, const byte *pic, int width, int height
 	}
 
 	image = tr.images[tr.numImages] = ri.Hunk_Alloc( sizeof( image_t ), h_low );
+#ifdef __EMSCRIPTEN__
+	/* Desktop OpenGL implicitly creates an object when an unused numeric name
+	 * is first bound. WebGL requires names returned by glGenTextures. */
+	qglGenTextures( 1, &image->texnum );
+#else
 	image->texnum = 1024 + tr.numImages;
+#endif
 	tr.numImages++;
 
 	image->mipmap = mipmap;
@@ -2517,4 +2529,3 @@ void	R_SkinList_f( void ) {
 	}
 	ri.Printf (PRINT_ALL, "------------------\n");
 }
-

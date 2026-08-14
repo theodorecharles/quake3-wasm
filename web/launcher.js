@@ -7,7 +7,7 @@ const directoryButton = document.querySelector("#choose-directory");
 const fileInput = document.querySelector("#pak-files");
 const playButton = document.querySelector("#play");
 const status = document.querySelector("#status");
-const canvas = document.querySelector("#game-canvas");
+const canvas = document.querySelector("#canvas");
 let selectedFiles = null;
 let validatedAssets = null;
 const manifestPromise = Quake3Assets.loadManifest();
@@ -85,8 +85,14 @@ form.addEventListener("submit", async event => {
       document.head.appendChild(script);
     });
 
-    const width = Math.max(640, Math.min(1920, Math.floor(canvas.clientWidth * devicePixelRatio)));
-    const height = Math.max(480, Math.min(1080, Math.floor(canvas.clientHeight * devicePixelRatio)));
+    form.hidden = true;
+    canvas.hidden = false;
+    canvas.focus();
+    /* The retail UI QVM authors its HUD and menus against a 4:3 virtual
+     * screen. Keep that logical framebuffer intact; CSS scales it to fit the
+     * browser without skewing the original artwork. */
+    const width = 960;
+    const height = 720;
     canvas.width = width;
     canvas.height = height;
     const args = [
@@ -98,8 +104,10 @@ form.addEventListener("submit", async event => {
       "+set","r_customheight",String(height), "+set","r_customaspect",String(width / height),
       ...profiles[profile.value], "+echo", "quake3-wasm ready"
     ];
-    form.hidden = true;
-    canvas.hidden = false;
+    const smokeMap = new URLSearchParams(location.search).get("map");
+    if (smokeMap && /^q3(?:dm|tourney|ctf)\d{1,2}$/.test(smokeMap)) {
+      args.push("+map", smokeMap);
+    }
     setStatus("Starting Quake III Arena…");
     await createQuake3Module({
       canvas,
