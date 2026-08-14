@@ -1,4 +1,8 @@
 .
 assets/
 assets_src/
+base/
+data/
+local-assets/
 node_modules/
+references/quake3-source/
