@@ -5,7 +5,8 @@ data
 runtime
 artifacts
 references
-ioq3
+ioq3/*
+!ioq3/COPYING.txt
 patches
 build/*
 !build/dedicated/

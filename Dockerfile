@@ -13,11 +13,17 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY server ./server
 COPY web ./web
+COPY ioq3/COPYING.txt ./COPYING.txt
 COPY build/dedicated/ioq3ded ./build/dedicated/ioq3ded
 COPY build/dedicated/baseq3 ./build/dedicated/baseq3
 COPY docker/entrypoint.sh /usr/local/bin/quake3-entrypoint
 
 RUN mkdir -p /tmp/quake3-runtime \
+    && printf '%s\n' \
+        'Corresponding source for this image:' \
+        "https://github.com/theodorecharles/quake3-wasm/tree/${VCS_REF}" \
+        'The image contains engine/runtime code only; supply proprietary Quake III data through /data.' \
+        > /opt/quake3/SOURCE-OFFER.txt \
     && chmod 0755 /usr/local/bin/quake3-entrypoint /opt/quake3/build/dedicated/ioq3ded \
     && chown -R node:node /opt/quake3 /tmp/quake3-runtime
 
