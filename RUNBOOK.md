@@ -34,8 +34,7 @@ Requirements:
 - CMake 3.20 or newer
 - Ninja
 - Node.js (static JavaScript and manifest checks)
-- Emscripten SDK; the default expected environment script is `/home/ted/emsdk/emsdk_env.sh`
-- A legal Steam Quake III Arena installation containing `baseq3/pak0.pk3` through `baseq3/pak8.pk3`
+- An active Emscripten SDK, or an explicit `EMSDK_ENV`/`EMSDK`
 
 The owner installation currently used to generate the local manifest is:
 
@@ -43,14 +42,16 @@ The owner installation currently used to generate the local manifest is:
 /home/ted/.steam/debian-installation/steamapps/common/Quake 3 Arena/baseq3
 ```
 
-Build by explicitly naming the legal data used to generate this build's validation manifest:
+The code-only build uses the tracked allowlist manifest and needs no retail
+files:
 
 ```bash
 cd /home/ted/Development/wasm/quake3-wasm
-PAK_SOURCE="/home/ted/.steam/debian-installation/steamapps/common/Quake 3 Arena/baseq3" ./build-web.sh
+./build-web.sh
 ```
 
-Override either discovered location without changing the repository:
+Optionally audit a legal installation against the tracked manifest during the
+build:
 
 ```bash
 EMSDK_ENV=/path/to/emsdk_env.sh \
@@ -59,7 +60,12 @@ BUILD_DIR=/absolute/output/path \
 ./build-web.sh
 ```
 
-`build-web.sh` requires `PAK_SOURCE`; it does not inspect a hardcoded user directory. It uses an already active `emcmake`, or an explicitly supplied `EMSDK_ENV`/`EMSDK`. It configures the dedicated root `CMakeLists.txt`, builds the engine, copies only public launcher files to `build-web`, and locally generates `build-web/pak-manifest.json`. It never copies a PAK.
+`build-web.sh` never searches a user directory. It uses an already active
+`emcmake`, or an explicitly supplied `EMSDK_ENV`/`EMSDK`. It configures the
+dedicated root `CMakeLists.txt`, builds the engine, and copies the code-only
+launcher plus the pinned metadata manifest to `build-web`. When `PAK_SOURCE` is
+set, the locally regenerated manifest must match the tracked manifest exactly.
+It never copies a PAK.
 
 The manifest generator can also be run independently:
 
@@ -158,7 +164,10 @@ The current fixed-function compatibility path is a bootstrap, not a final render
 
 ## Known risks and honest blockers
 
-- Chromium runtime has not yet been exercised, so the build artifact is a compile/static milestone rather than a claimed playable release.
+- Chrome loaded the identity/graphics/data launcher, fetched the pinned metadata
+  manifest, and correctly kept **Play** disabled before owner data was selected.
+  The automation extension could not attach local files, so engine initialization
+  and playability remain a short manual owner-data smoke rather than a claim.
 - Staging the retail PAK set into main-thread MEMFS holds one roughly 500 MB browser copy. Chunking prevents transient whole-file copies, but true zero-copy local File access requires moving the engine to a worker with synchronous Blob reads or another purpose-built synchronous storage bridge.
 - The directory handle is browser-private and is reused only while read permission remains granted. Chromium may ask the user to select/grant the folder again after a hard refresh. The fallback `<input type=file>` selection is intentionally session-only; persisting roughly 500 MB of duplicate Blob bodies in IndexedDB would conflict with the bounded-storage design.
 - Original desktop OpenGL behavior is running through legacy emulation. Link-time unsupported immediate/display-list calls were bypassed only where the native renderer already has an indexed draw path or where the display-list path is documented as unimplemented.
@@ -175,7 +184,7 @@ The current fixed-function compatibility path is a bootstrap, not a final render
 - `code/qcommon/vm.c`: interpreted retail QVM enforcement.
 - `code/botlib/l_precomp.c`: WebAssembly-compatible `time_t` handling.
 - `code/renderer/qgl.h`, `tr_shade.c`, `tr_surface.c`: WebGL include and narrowly isolated unsupported desktop GL paths.
-- `web/`: identity-first launcher, graphics profiles, asset validation, persistence, and pre-run filesystem setup.
+- `web/`: identity-first launcher, graphics profiles, pinned PAK manifest, asset validation, persistence, and pre-run filesystem setup.
 - `scripts/`: manifest generation and loopback dev server.
 - `tests/static.sh`: JavaScript syntax, SHA implementation, artifact, manifest, and no-PK3 checks.
 

@@ -5,12 +5,6 @@ repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 build_dir=${BUILD_DIR:-"$repo_dir/build-web"}
 pak_source=${PAK_SOURCE:-}
 
-if [[ -z "$pak_source" ]]; then
-  echo "PAK_SOURCE must explicitly name your legal Quake III baseq3 directory." >&2
-  echo "Example: PAK_SOURCE=/path/to/Quake\\ 3\\ Arena/baseq3 ./build-web.sh" >&2
-  exit 1
-fi
-
 if ! command -v emcmake >/dev/null 2>&1; then
   emsdk_env=${EMSDK_ENV:-${EMSDK:+$EMSDK/emsdk_env.sh}}
   if [[ -z "$emsdk_env" || ! -f "$emsdk_env" ]]; then
@@ -27,9 +21,15 @@ emcmake cmake -S "$repo_dir" -B "$build_dir" -G Ninja \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build "$build_dir" --parallel
 
-"$repo_dir/scripts/generate-pak-manifest.sh" \
-  "$pak_source" \
-  "$build_dir/pak-manifest.json"
+if [[ -n "$pak_source" ]]; then
+  "$repo_dir/scripts/generate-pak-manifest.sh" \
+    "$pak_source" \
+    "$build_dir/pak-manifest.json"
+  cmp "$repo_dir/web/pak-manifest.json" "$build_dir/pak-manifest.json" >/dev/null || {
+    echo "Owner PAKs do not match the tracked supported manifest." >&2
+    exit 1
+  }
+fi
 
 echo "Web build ready in $build_dir"
 echo "Run: $repo_dir/scripts/serve-web.sh"
