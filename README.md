@@ -6,14 +6,14 @@ server and game QVMs, and serves them from one Node host with same-origin PK3
 range delivery and WebSocket-to-UDP game transport.
 
 The engine, menus, HUD, game code, and bots remain Quake III. The HTML layer is
-only a launcher for player/settings capture, legal asset delivery, server
+only a launcher for player/settings capture, runtime integration, server
 lifecycle, and browser input policy.
 
-## Legal game data
+## Game data
 
-Bring your own legally acquired Quake III Arena installation. Retail
-`pak0.pk3` through `pak8.pk3` are ignored by Git, are never included in public
-build artifacts, and must not be added to an image or release.
+The required Quake III Arena `pak0.pk3` through `pak8.pk3` files are ignored by
+Git, are never included in public build artifacts, and must not be added to an
+image or release.
 
 For local development, discover the Steam installation automatically or set
 `Q3_PATH` to the directory containing the nine PK3 files:
